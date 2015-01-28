@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Chat with socket.io and node.js</title>
+    <style>
+        #chat{
+            height : 500px;
+        }
+        #contentWrap{
+            display: none;
+        }
+        #chatWrap{
+            float:left;
+            border:1px #000000 solid;
+        }
+        .error{
+            color:red;
+        }
+        .whisper{
+            color : gray;
+            font-style: italic;
+        }
+
+
+    </style>
+</head>
+<body>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
+    <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+
+
+    <div id="nickWrap">
+        <p>Enter username</p>
+        <p id="nickError"></p>
+        <form id="setNick">
+            <input size="35" id="nickname">
+            <input type="submit">
+        </form>
+    </div>
+
+
+    <div id="contentWrap">
+        <div id="chatWrap">
+            <div id="chat"></div>
+            <form id="send-message" action="">
+                <input size="35" id="message">
+                <input type="submit">
+            </form>
+        </div>
+        <div id="users"></div>
+    </div>
+    <script>
+        var socket = io.connect();
+        var $nickForm = $('#setNick');
+        var $nickError = $('#nickError');
+        var $nickBox = $('#nickname');
+        var $users = $('#users');
+        var i;
+
+        //nickname 부분 모내는것
+        $nickForm.submit(function (e) {
+            e.preventDefault();
+            socket.emit('new user', $nickBox.val(), function(data){
+                if(data){
+                    $('#nickWrap').hide();
+                    $('#contentWrap').show();
+                }else{
+                    $nickError.html('That username is already taken! Try again.');
+                }
+            });
+            $nickBox.val('');
+        });
+
+        //nickname 부분 받는데
+        socket.on('usernames', function (data) {
+            var html = '';
+                    for(i=0; i<data.length; i++){
+                        html += data[i] + '<br/>'
+                    }
+            $users.html(html);
+        });
+
+
+
+        $('#send-message').submit(function () {
+            socket.emit('send message', $('#message').val(),function(data){
+                $('#chat').append('<span class="error">' + data + "</span><br>");
+            });
+            $('#message').val('');
+            return false;
+        });
+
+        socket.on('load old msgs', function (docs) {
+            for(var i=docs.length-1; i>=0; i--){
+                displayMsg(docs[i]);
+            }
+        });
+
+
+        socket.on('new message', function (data) {
+//            $('#chat').append('<b>' + data.nick +':' + '</b>'+ data.msg + '<br>');
+            displayMsg(data);
+            return false;
+        });
+
+        function displayMsg(data){
+            $('#chat').append('<span class="msg"><b>' + data.nick + ': </b>'+data.msg + "<br/>");
+        }
+        
+        socket.on('whisper', function (data) {
+            $('#chat').append('<span class="whisper"><b>' + data.nick + ': </b>'+data.msg + "<br/>");
+        });
+    </script>
+</body>
+</html>
