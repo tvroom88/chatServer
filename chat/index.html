@@ -98,7 +98,7 @@
             }
         });
 
-
+     //새로운 메세지가 왔을떄-----------------
         socket.on('new message', function (data) {
 //            $('#chat').append('<b>' + data.nick +':' + '</b>'+ data.msg + '<br>');
             displayMsg(data);
@@ -108,7 +108,8 @@
         function displayMsg(data){
             $('#chat').append('<span class="msg"><b>' + data.nick + ': </b>'+data.msg + "<br/>");
         }
-        
+
+        //귓속말 부분
         socket.on('whisper', function (data) {
             $('#chat').append('<span class="whisper"><b>' + data.nick + ': </b>'+data.msg + "<br/>");
         });

@@ -28,6 +28,13 @@ var chatSchema = mongoose.Schema({
 
 var Chat = mongoose.model('Message', chatSchema);
 //console.log(Chat) ;
+var hello = Chat.find({}, function (err, docs) {
+        //console.log(docs);
+    //var userString = JSON.stringify(docs);
+    //var userString = JSON.parse(docs);
+    //console.log(userString);
+    //console.log(docs.length);
+});
 
 //-------------------------------------------
 
@@ -36,17 +43,41 @@ app.get('/', function (req, res) {
 });
 //뭐나오는지 찍어볼려고 만들어 놓은거임 -----------------------
 app.get('/DataBase', function (req, res) {
-    res.html(Chat);
+    var hi = Chat.find({}, function (err, docs) {
+        res.send(docs);
+
+
+    });
+
 });
 //----------------------------------------------------
 io.sockets.on('connection', function (socket) {
+
+
+    //console.log("client connected: " + client.id);
     var query = Chat.find({});
     //query.limit(8); 찾는 수치를 지정해줄수있소이
     query.sort('-created').limit(8).exec(function (err, docs) {
         if(err) throw err;
         socket.emit('load old msgs', docs);
 
+
+        //parser 한부분 -------------------------- 일단 대화에서 적은 부분만 보낼 예정
+
+        var userString = JSON.stringify(docs);
+        socket.emit('send android',userString);
+        //--------------------------------------
     });
+
+    //--------------------------------------------------
+    socket.on('come to android', function (data) {
+
+    });
+    //-------------------------------------------------
+
+
+
+
 
     // 새로운 유저 정보 받는 부분
     socket.on('new user', function(data, callback){
@@ -109,7 +140,7 @@ io.sockets.on('connection', function (socket) {
                 }else{
                     io.sockets.emit('new message', {msg: msg, nick: socket.nickname});
                     console.log('already send to mongoose');
-                    console.log(newMsg);
+                    //console.log(newMsg);
                 }
             });
 
@@ -130,4 +161,22 @@ io.sockets.on('connection', function (socket) {
         //해당 아이디를 지우고 바로 업데이
     });
 
+});
+
+//--------------------------------------------------------------------
+io.sockets.on('connection', function(client){
+
+    console.log("client connected: " + client.id);
+
+    client.on("sendTo", function(chatMessage){
+        console.log("Message From: " + chatMessage.fromName);
+        console.log("Message To: " + chatMessage.toName);
+
+
+        io.sockets.socket(chatMessage.toClientID).emit("chatMessage", {"fromName" : chatMessage.fromName,
+            "toName" : chatMessage.toName,
+            "toClientID" : chatMessage.toClientID,
+            "msg" : chatMessage.msg});
+
+    });
 });
